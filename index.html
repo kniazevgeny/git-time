@@ -39,10 +39,49 @@
 
     .app {
       width: 100%;
-      max-width: 1200px;
+      max-width: 1400px;
       display: flex;
       flex-direction: column;
       gap: 16px;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .app-left {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .app-right {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @media (min-width: 1024px) {
+      .app-layout {
+        grid-template-columns: 380px 1fr;
+        align-items: start;
+      }
+
+      .app-left {
+        position: sticky;
+        top: 16px;
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+      }
+    }
+
+    @media (max-width: 1023px) {
+      .app-layout {
+        display: flex;
+        flex-direction: column;
+      }
     }
 
     .card {
@@ -375,8 +414,10 @@
 </head>
 <body>
 <div class="app">
-  <!-- CONFIG / INPUT CARD -->
-  <div class="card">
+  <div class="app-layout">
+    <!-- LEFT COLUMN: CONFIG / INPUT -->
+    <div class="app-left">
+      <div class="card">
     <div class="card-header">
       <div class="card-title">
         Git Work Streaks
@@ -433,11 +474,14 @@
         <input id="stateFileInput" type="file" accept=".json" style="display: none;" />
         <button id="btnCopyUrl" class="btn btn-sm btn-outline">Copy share URL</button>
       </div>
+      </div>
     </div>
-  </div>
+    </div>
 
-  <!-- COMMITS CARD -->
-  <div class="card">
+    <!-- RIGHT COLUMN: COMMITS & SESSIONS -->
+    <div class="app-right">
+      <!-- COMMITS CARD -->
+      <div class="card">
     <div class="card-header">
       <div class="card-title">
         Commits
@@ -527,6 +571,7 @@
         <div class="stat-value" id="globalRoundedDisplay">0.0 min</div>
         <div class="stat-sub" id="globalRoundedSub">Total raw, ceil once to block</div>
       </div>
+    </div>
     </div>
   </div>
 </div>
