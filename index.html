@@ -1027,7 +1027,7 @@
     const config = getConfig();
     const logUrl = document.getElementById("logUrlInput").value.trim() || null;
     return {
-      version: 1,
+      version: 2, // Version 2: config only, no commits
       config: {
         gapHours: config.gapHours,
         prebufferMin: config.prebufferMin,
@@ -1037,17 +1037,11 @@
         startDate: document.getElementById("startDate").value || null,
         logUrl: logUrl,
       },
-      commits: commits.map((c) => ({
-        hash: c.hash,
-        ts: c.ts,
-        meta: c.meta,
-        included: c.included,
-      })),
     };
   }
 
   function deserializeState(state) {
-    if (!state || !state.config || !Array.isArray(state.commits)) {
+    if (!state || !state.config) {
       throw new Error("Invalid state format");
     }
 
@@ -1078,37 +1072,39 @@
       document.getElementById("logUrlInput").value = "";
     }
 
-    // Restore commits
-    if (commits.length === 0 && state.commits.length > 0) {
-      // No commits loaded yet - restore from state
-      commits = state.commits.map((sc) => {
-        const d = new Date(sc.ts * 1000);
-        const dateStr = d.toLocaleString(undefined, {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
+    // Restore commits (only for backward compatibility with version 1)
+    if (state.commits && Array.isArray(state.commits) && state.commits.length > 0) {
+      if (commits.length === 0) {
+        // No commits loaded yet - restore from state
+        commits = state.commits.map((sc) => {
+          const d = new Date(sc.ts * 1000);
+          const dateStr = d.toLocaleString(undefined, {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+          return {
+            hash: sc.hash,
+            ts: sc.ts,
+            meta: sc.meta,
+            dateStr,
+            included: sc.included,
+          };
         });
-        return {
-          hash: sc.hash,
-          ts: sc.ts,
-          meta: sc.meta,
-          dateStr,
-          included: sc.included,
-        };
-      });
-      commits.sort((a, b) => a.ts - b.ts);
-    } else {
-      // Commits already loaded - match by hash and update included status
-      const commitMap = new Map(commits.map((c) => [c.hash, c]));
-      state.commits.forEach((sc) => {
-        const existing = commitMap.get(sc.hash);
-        if (existing) {
-          existing.included = sc.included;
-        }
-      });
+        commits.sort((a, b) => a.ts - b.ts);
+      } else {
+        // Commits already loaded - match by hash and update included status
+        const commitMap = new Map(commits.map((c) => [c.hash, c]));
+        state.commits.forEach((sc) => {
+          const existing = commitMap.get(sc.hash);
+          if (existing) {
+            existing.included = sc.included;
+          }
+        });
+      }
     }
 
     renderCommits();
