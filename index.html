@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Git Work Streaks Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #111827;
+      --panel: #020617;
+      --panel-soft: #0b1120;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.1);
+      --accent-strong: #f97316;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2933;
+      --danger: #f97373;
+      --radius-lg: 14px;
+      --radius-md: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1d283a, #020617 50%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(
+        135deg,
+        rgba(15, 23, 42, 0.9),
+        rgba(15, 23, 42, 0.96)
+      );
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+      padding: 16px 18px;
+      backdrop-filter: blur(18px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .card-subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.8rem;
+    }
+
+    .field label {
+      color: var(--muted);
+    }
+
+    .field input[type="number"],
+    .field input[type="text"] {
+      background: var(--bg-soft);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 7px 9px;
+      font-size: 0.85rem;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
+    }
+
+    .file-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .file-row input[type="file"] {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      font-size: 0.75rem;
+      color: #bbf7d0;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.8);
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s ease, transform 0.06s ease,
+        box-shadow 0.12s ease, border-color 0.1s ease;
+    }
+
+    .btn:hover {
+      background: rgba(30, 64, 175, 0.9);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+      transform: translateY(-0.5px);
+    }
+
+    .btn-outline {
+      background: transparent;
+    }
+
+    .btn-danger {
+      border-color: rgba(239, 68, 68, 0.6);
+      color: #fecaca;
+    }
+
+    .btn-danger:hover {
+      background: rgba(248, 113, 113, 0.1);
+      box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.6);
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+    }
+
+    .row-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .table-wrapper {
+      max-height: 360px;
+      overflow: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: radial-gradient(circle at top left, #020617, #020617);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      min-width: 600px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    th,
+    td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.9);
+      white-space: nowrap;
+    }
+
+    th {
+      background: #020617;
+      font-weight: 500;
+      color: var(--muted);
+      text-align: left;
+      font-size: 0.75rem;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    tbody tr:hover {
+      background: rgba(15, 118, 110, 0.1);
+    }
+
+    .col-hash {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+        Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.74rem;
+      color: var(--accent);
+    }
+
+    .col-meta {
+      white-space: normal;
+      max-width: 500px;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .highlight {
+      color: var(--accent-strong);
+      font-weight: 600;
+    }
+
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .stat-card {
+      background: radial-gradient(circle at top left, #020617, #020617);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 8px 9px;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .stat-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0 8px 0;
+      flex-wrap: wrap;
+    }
+
+    .filter-row input[type="text"] {
+      background: var(--bg-soft);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 5px 8px;
+      font-size: 0.8rem;
+      color: var(--text);
+      outline: none;
+      width: 200px;
+    }
+
+    .filter-row input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
+    }
+
+    .session-index-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(56, 189, 248, 0.7);
+      font-size: 0.7rem;
+      color: var(--accent);
+      margin-right: 4px;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .checkbox-cell {
+      text-align: center;
+    }
+
+    .checkbox-cell input {
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .card {
+        padding: 14px;
+      }
+
+      table {
+        font-size: 0.75rem;
+      }
+
+      th,
+      td {
+        padding: 5px 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- CONFIG / INPUT CARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        Git Work Streaks
+        <span class="pill">Interactive calculator</span>
+      </div>
+      <div class="card-subtitle">
+        Drop a <code>git log</code> file → deselect non-billable commits → see sessions &amp; price.
+      </div>
+    </div>
+
+    <div class="file-row">
+      <input id="fileInput" type="file" accept=".txt,.log,.csv,.data,.gitlog" />
+      <span id="fileStatus" class="muted">No file loaded.</span>
+    </div>
+
+    <div class="controls-grid">
+      <div class="field">
+        <label for="gapHours">Max inactivity gap (hours)</label>
+        <input id="gapHours" type="number" step="0.25" min="0.25" value="3" />
+      </div>
+      <div class="field">
+        <label for="prebufferMin">Pre-session buffer (minutes)</label>
+        <input id="prebufferMin" type="number" step="5" min="0" value="30" />
+      </div>
+      <div class="field">
+        <label for="roundMin">Rounding block (minutes)</label>
+        <input id="roundMin" type="number" step="5" min="5" value="15" />
+      </div>
+      <div class="field">
+        <label for="hourlyRate">Hourly rate</label>
+        <input id="hourlyRate" type="number" step="1" min="0" value="60" />
+      </div>
+      <div class="field">
+        <label for="currency">Currency symbol</label>
+        <input id="currency" type="text" value="₽" />
+      </div>
+      <div class="field">
+        <label for="startDate">Start date (filter commits)</label>
+        <input id="startDate" type="date" />
+      </div>
+    </div>
+
+    <div class="row-between" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(148, 163, 184, 0.15);">
+      <div class="muted" style="font-size: 0.75rem;">
+        Share your configuration and commit selection
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button id="btnDownloadState" class="btn btn-sm">Download state</button>
+        <button id="btnUploadState" class="btn btn-sm btn-outline">Upload state</button>
+        <input id="stateFileInput" type="file" accept=".json" style="display: none;" />
+        <button id="btnCopyUrl" class="btn btn-sm btn-outline">Copy share URL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMITS CARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        Commits
+        <span class="pill" id="commitCountBadge">0 total</span>
+      </div>
+      <div class="row-between">
+        <div class="filter-row">
+          <input id="filterInput" type="text" placeholder="Filter by message / author / hash…" />
+          <span class="muted">Click a checkbox to include/exclude commit from billing.</span>
+        </div>
+        <div>
+          <button id="btnIncludeAll" class="btn btn-sm">Include all</button>
+          <button id="btnExcludeAll" class="btn btn-sm btn-outline">Exclude all</button>
+          <button id="btnToggleSelection" class="btn btn-sm btn-outline">Invert selection</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="commitTable">
+        <thead>
+        <tr>
+          <th style="width: 48px; text-align:center;">Billable</th>
+          <th>Date &amp; time</th>
+          <th>Hash</th>
+          <th>Meta (author / subject)</th>
+          <th class="text-right">Unix ts</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- filled by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SESSIONS / TOTALS CARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        Sessions &amp; totals
+        <span class="pill" id="sessionCountBadge">0 sessions</span>
+      </div>
+      <div class="card-subtitle">
+        Sessions group close commits, add a prebuffer before first commit, then round to billing blocks.
+      </div>
+    </div>
+
+    <div class="table-wrapper" style="max-height: 260px;">
+      <table id="sessionTable">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Commits</th>
+          <th class="text-right">Raw (min)</th>
+          <th class="text-right">Billed (min)</th>
+          <th class="text-right">Billed (h)</th>
+          <th class="text-right">Price</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- filled by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals-grid">
+      <div class="stat-card">
+        <div class="stat-label">Raw time</div>
+        <div class="stat-value" id="rawTimeDisplay">0.0 min</div>
+        <div class="stat-sub" id="rawTimeSub">0.00 hours</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Billed time (sessions)</div>
+        <div class="stat-value" id="billedTimeDisplay">0.0 min</div>
+        <div class="stat-sub" id="billedTimeSub">0.00 hours</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total price (sessions)</div>
+        <div class="stat-value" id="priceDisplay">0 €</div>
+        <div class="stat-sub" id="priceSub">0.00 hours × 0 €/h</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Global rounding (total)</div>
+        <div class="stat-value" id="globalRoundedDisplay">0.0 min</div>
+        <div class="stat-sub" id="globalRoundedSub">Total raw, ceil once to block</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Data model -----------------------------------------------------------
+
+  /**
+   * Commit structure:
+   *  {
+   *    hash: string,
+   *    ts: number,
+   *    meta: string,
+   *    dateStr: string,
+   *    included: boolean
+   *  }
+   */
+  let commits = [];
+
+  // --- Parsing / file loading ----------------------------------------------
+
+  function parseCommitsFromText(text) {
+    const lines = text.split(/\r?\n/);
+    const map = new Map(); // hash -> commit (dedupe across branches)
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      const parts = line.split("|");
+      if (parts.length < 2) {
+        continue;
+      }
+
+      const hash = parts[0].trim();
+      const tsStr = parts[1].trim();
+      const ts = Number.parseInt(tsStr, 10);
+      if (!Number.isFinite(ts)) {
+        continue;
+      }
+
+      const meta = parts.slice(2).join(" | ").trim();
+
+      const existing = map.get(hash);
+      if (!existing || ts < existing.ts) {
+        const d = new Date(ts * 1000);
+        const dateStr = d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+
+        // Detect merge commits (typically start with "Merge" or contain "Merge branch")
+        const isMergeCommit = /^Merge\s/i.test(meta) || /\bMerge\s+(branch|pull|remote)/i.test(meta);
+        
+        map.set(hash, {
+          hash,
+          ts,
+          meta,
+          dateStr,
+          included: !isMergeCommit, // Exclude merge commits by default
+        });
+      }
+    }
+
+    const list = Array.from(map.values());
+    list.sort((a, b) => a.ts - b.ts);
+    return list;
+  }
+
+  function handleFileChange(event) {
+    const file = event.target.files[0];
+    const statusEl = document.getElementById("fileStatus");
+    if (!file) {
+      statusEl.textContent = "No file loaded.";
+      commits = [];
+      renderCommits();
+      recomputeAll();
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      commits = parseCommitsFromText(text);
+      statusEl.innerHTML =
+        `<span class="badge">Loaded ${commits.length} unique commits from "${file.name}"</span>`;
+      renderCommits();
+      recomputeAll();
+    };
+    reader.onerror = () => {
+      statusEl.textContent = "Error reading file.";
+    };
+    reader.readAsText(file);
+  }
+
+  // --- Utility helpers ------------------------------------------------------
+
+  function ceilDurationToBlock(durationSeconds, blockMinutes) {
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return 0;
+    const blockSeconds = blockMinutes * 60;
+    const blocks = Math.ceil(durationSeconds / blockSeconds);
+    return blocks * blockSeconds;
+  }
+
+  function formatMinutes(value) {
+    return value.toFixed(1);
+  }
+
+  function shortHash(hash) {
+    if (!hash) return "";
+    return hash.slice(0, 8);
+  }
+
+  function getConfig() {
+    const gapHours = Number.parseFloat(document.getElementById("gapHours").value) || 0;
+    const prebufferMin = Number.parseFloat(document.getElementById("prebufferMin").value) || 0;
+    const roundMin = Number.parseFloat(document.getElementById("roundMin").value) || 15;
+    const hourlyRate = Number.parseFloat(document.getElementById("hourlyRate").value) || 0;
+    const currency = document.getElementById("currency").value || "€";
+    const startDateStr = document.getElementById("startDate").value;
+
+    let startDateTs = null;
+    if (startDateStr) {
+      // Parse date string (YYYY-MM-DD) and set to start of day in local timezone
+      const date = new Date(startDateStr + "T00:00:00");
+      if (!isNaN(date.getTime())) {
+        startDateTs = Math.floor(date.getTime() / 1000);
+      }
+    }
+
+    return {
+      gapHours: Math.max(0.01, gapHours),
+      prebufferMin: Math.max(0, prebufferMin),
+      roundMin: Math.max(1, roundMin),
+      hourlyRate: Math.max(0, hourlyRate),
+      currency,
+      startDateTs,
+    };
+  }
+
+  // --- Sessions logic -------------------------------------------------------
+
+  function buildSessionsFromCommits(commitsIncluded, config) {
+    if (!commitsIncluded.length) return [];
+
+    const gapSeconds = config.gapHours * 3600;
+    const prebufferSeconds = config.prebufferMin * 60;
+
+    const sorted = [...commitsIncluded].sort((a, b) => a.ts - b.ts);
+
+    const sessions = [];
+    let current = {
+      startTs: sorted[0].ts,
+      endTs: sorted[0].ts,
+      commits: [sorted[0]],
+    };
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1];
+      const cur = sorted[i];
+      const gap = cur.ts - prev.ts;
+
+      if (gap > gapSeconds) {
+        sessions.push(current);
+        current = {
+          startTs: cur.ts,
+          endTs: cur.ts,
+          commits: [cur],
+        };
+      } else {
+        current.endTs = cur.ts;
+        current.commits.push(cur);
+      }
+    }
+    sessions.push(current);
+
+    // Apply prebuffer to each session
+    const withBuffer = sessions.map((s) => {
+      const adjustedStart = Math.max(0, s.startTs - prebufferSeconds);
+      return {
+        startTs: adjustedStart,
+        endTs: s.endTs,
+        commits: s.commits,
+      };
+    });
+
+    return withBuffer;
+  }
+
+  // --- Rendering: commits table --------------------------------------------
+
+  function renderCommits() {
+    const tbody = document.querySelector("#commitTable tbody");
+    const filterValue = document.getElementById("filterInput").value.toLowerCase().trim();
+    tbody.innerHTML = "";
+
+    const badge = document.getElementById("commitCountBadge");
+    badge.textContent = `${commits.length} total`;
+
+    commits.forEach((c, idx) => {
+      const haystack = `${c.hash} ${c.meta} ${c.dateStr}`.toLowerCase();
+      if (filterValue && !haystack.includes(filterValue)) {
+        return;
+      }
+
+      const tr = document.createElement("tr");
+      tr.dataset.index = String(idx);
+
+      const tdCheck = document.createElement("td");
+      tdCheck.className = "checkbox-cell";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = c.included;
+      checkbox.addEventListener("change", () => {
+        c.included = checkbox.checked;
+        recomputeAll();
+      });
+      tdCheck.appendChild(checkbox);
+
+      const tdDate = document.createElement("td");
+      tdDate.textContent = c.dateStr;
+
+      const tdHash = document.createElement("td");
+      tdHash.className = "col-hash";
+      tdHash.textContent = shortHash(c.hash);
+
+      const tdMeta = document.createElement("td");
+      tdMeta.className = "col-meta";
+      tdMeta.textContent = c.meta || "(no message)";
+
+      const tdTs = document.createElement("td");
+      tdTs.className = "text-right";
+      tdTs.textContent = String(c.ts);
+
+      tr.appendChild(tdCheck);
+      tr.appendChild(tdDate);
+      tr.appendChild(tdHash);
+      tr.appendChild(tdMeta);
+      tr.appendChild(tdTs);
+
+      tbody.appendChild(tr);
+    });
+
+    // Update include/exclude buttons state
+    updateSelectionButtonsState();
+  }
+
+  function updateSelectionButtonsState() {
+    const countIncluded = commits.filter((c) => c.included).length;
+    const countTotal = commits.length;
+    const badge = document.getElementById("commitCountBadge");
+    badge.innerHTML = `${countTotal} total <span class="tag-pill">${countIncluded} billable</span>`;
+  }
+
+  // --- Rendering: sessions & totals ----------------------------------------
+
+  function renderSessionsAndTotals(sessions, config, commitsIncluded) {
+    const tbody = document.querySelector("#sessionTable tbody");
+    tbody.innerHTML = "";
+
+    const sessionBadge = document.getElementById("sessionCountBadge");
+    sessionBadge.textContent = `${sessions.length} sessions`;
+
+    let totalRawSec = 0;
+    let totalBilledSec = 0;
+    let totalPrice = 0;
+
+    sessions.forEach((s, index) => {
+      const rawSec = Math.max(0, s.endTs - s.startTs);
+      const billedSec = ceilDurationToBlock(rawSec, config.roundMin);
+      const rawMin = rawSec / 60;
+      const billedMin = billedSec / 60;
+      const billedHours = billedSec / 3600;
+      const price = billedHours * config.hourlyRate;
+
+      totalRawSec += rawSec;
+      totalBilledSec += billedSec;
+      totalPrice += price;
+
+      const tr = document.createElement("tr");
+
+      const startDate = new Date(s.startTs * 1000);
+      const endDate = new Date(s.endTs * 1000);
+
+      const fmt = (d) =>
+        d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+
+      const tdIndex = document.createElement("td");
+      tdIndex.innerHTML =
+        `<span class="session-index-pill">${index + 1}</span>`;
+
+      const tdStart = document.createElement("td");
+      tdStart.textContent = fmt(startDate);
+
+      const tdEnd = document.createElement("td");
+      tdEnd.textContent = fmt(endDate);
+
+      const tdCommits = document.createElement("td");
+      tdCommits.textContent = s.commits.length.toString();
+
+      const tdRaw = document.createElement("td");
+      tdRaw.className = "text-right";
+      tdRaw.textContent = formatMinutes(rawMin);
+
+      const tdBilled = document.createElement("td");
+      tdBilled.className = "text-right";
+      tdBilled.textContent = formatMinutes(billedMin);
+
+      const tdBilledHours = document.createElement("td");
+      tdBilledHours.className = "text-right";
+      tdBilledHours.textContent = billedHours.toFixed(2);
+
+      const tdPrice = document.createElement("td");
+      tdPrice.className = "text-right";
+      tdPrice.textContent = `${price.toFixed(2)} ${config.currency}`;
+
+      tr.appendChild(tdIndex);
+      tr.appendChild(tdStart);
+      tr.appendChild(tdEnd);
+      tr.appendChild(tdCommits);
+      tr.appendChild(tdRaw);
+      tr.appendChild(tdBilled);
+      tr.appendChild(tdBilledHours);
+      tr.appendChild(tdPrice);
+
+      tbody.appendChild(tr);
+    });
+
+    // Totals
+    const rawMin = totalRawSec / 60;
+    const billedMin = totalBilledSec / 60;
+    const billedHours = totalBilledSec / 3600;
+
+    document.getElementById("rawTimeDisplay").textContent =
+      `${formatMinutes(rawMin)} min`;
+    document.getElementById("rawTimeSub").textContent =
+      `${(rawMin / 60).toFixed(2)} hours`;
+
+    document.getElementById("billedTimeDisplay").textContent =
+      `${formatMinutes(billedMin)} min`;
+    document.getElementById("billedTimeSub").textContent =
+      `${billedHours.toFixed(2)} hours`;
+
+    document.getElementById("priceDisplay").textContent =
+      `${totalPrice.toFixed(2)} ${config.currency}`;
+    document.getElementById("priceSub").textContent =
+      `${billedHours.toFixed(2)} hours × ${config.hourlyRate.toFixed(2)} ${config.currency}/h`;
+
+    // Global rounding on raw total
+    const globalRoundedSec = ceilDurationToBlock(totalRawSec, config.roundMin);
+    const globalRoundedMin = globalRoundedSec / 60;
+    document.getElementById("globalRoundedDisplay").textContent =
+      `${formatMinutes(globalRoundedMin)} min`;
+    document.getElementById("globalRoundedSub").textContent =
+      `Raw ${(rawMin / 60).toFixed(2)} h → ceil to ${config.roundMin} min blocks`;
+  }
+
+  // --- Recompute pipeline ---------------------------------------------------
+
+  function recomputeAll() {
+    const config = getConfig();
+    
+    // Apply date filter: uncheck commits before start date
+    if (config.startDateTs !== null) {
+      commits.forEach((c) => {
+        if (c.ts < config.startDateTs) {
+          c.included = false;
+        }
+      });
+      // Re-render commits table to reflect unchecked state
+      renderCommits();
+    }
+    
+    let included = commits.filter((c) => c.included);
+    
+    // Filter by start date if specified (double-check, but commits should already be unchecked)
+    if (config.startDateTs !== null) {
+      included = included.filter((c) => c.ts >= config.startDateTs);
+    }
+    
+    const sessions = buildSessionsFromCommits(included, config);
+    renderSessionsAndTotals(sessions, config, included);
+    updateSelectionButtonsState();
+  }
+
+  // --- Selection controls ---------------------------------------------------
+
+  function includeAllCommits() {
+    commits.forEach((c) => (c.included = true));
+    renderCommits();
+    recomputeAll();
+  }
+
+  function excludeAllCommits() {
+    commits.forEach((c) => (c.included = false));
+    renderCommits();
+    recomputeAll();
+  }
+
+  function invertSelection() {
+    commits.forEach((c) => (c.included = !c.included));
+    renderCommits();
+    recomputeAll();
+  }
+
+  // --- Share / State management ---------------------------------------------
+
+  function serializeState() {
+    const config = getConfig();
+    return {
+      version: 1,
+      config: {
+        gapHours: config.gapHours,
+        prebufferMin: config.prebufferMin,
+        roundMin: config.roundMin,
+        hourlyRate: config.hourlyRate,
+        currency: config.currency,
+        startDate: document.getElementById("startDate").value || null,
+      },
+      commits: commits.map((c) => ({
+        hash: c.hash,
+        ts: c.ts,
+        meta: c.meta,
+        included: c.included,
+      })),
+    };
+  }
+
+  function deserializeState(state) {
+    if (!state || !state.config || !Array.isArray(state.commits)) {
+      throw new Error("Invalid state format");
+    }
+
+    // Restore config
+    if (state.config.gapHours !== undefined) {
+      document.getElementById("gapHours").value = state.config.gapHours;
+    }
+    if (state.config.prebufferMin !== undefined) {
+      document.getElementById("prebufferMin").value = state.config.prebufferMin;
+    }
+    if (state.config.roundMin !== undefined) {
+      document.getElementById("roundMin").value = state.config.roundMin;
+    }
+    if (state.config.hourlyRate !== undefined) {
+      document.getElementById("hourlyRate").value = state.config.hourlyRate;
+    }
+    if (state.config.currency !== undefined) {
+      document.getElementById("currency").value = state.config.currency;
+    }
+    if (state.config.startDate !== undefined && state.config.startDate !== null) {
+      document.getElementById("startDate").value = state.config.startDate;
+    } else {
+      document.getElementById("startDate").value = "";
+    }
+
+    // Restore commits
+    if (commits.length === 0 && state.commits.length > 0) {
+      // No commits loaded yet - restore from state
+      commits = state.commits.map((sc) => {
+        const d = new Date(sc.ts * 1000);
+        const dateStr = d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        return {
+          hash: sc.hash,
+          ts: sc.ts,
+          meta: sc.meta,
+          dateStr,
+          included: sc.included,
+        };
+      });
+      commits.sort((a, b) => a.ts - b.ts);
+    } else {
+      // Commits already loaded - match by hash and update included status
+      const commitMap = new Map(commits.map((c) => [c.hash, c]));
+      state.commits.forEach((sc) => {
+        const existing = commitMap.get(sc.hash);
+        if (existing) {
+          existing.included = sc.included;
+        }
+      });
+    }
+
+    renderCommits();
+    recomputeAll();
+  }
+
+  function downloadState() {
+    const state = serializeState();
+    const json = JSON.stringify(state, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `git-time-state-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function uploadState() {
+    const input = document.getElementById("stateFileInput");
+    input.click();
+  }
+
+  function handleStateFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const state = JSON.parse(e.target.result);
+        deserializeState(state);
+        document.getElementById("fileStatus").innerHTML =
+          `<span class="badge">State loaded from "${file.name}"</span>`;
+      } catch (err) {
+        alert("Error loading state: " + err.message);
+      }
+    };
+    reader.onerror = () => {
+      alert("Error reading file.");
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be selected again
+    event.target.value = "";
+  }
+
+  function copyShareUrl() {
+    const state = serializeState();
+    const json = JSON.stringify(state);
+    // Compress to base64 for URL
+    const base64 = btoa(unescape(encodeURIComponent(json)));
+    const url = new URL(window.location.href);
+    url.hash = "#state=" + base64;
+    const fullUrl = url.toString();
+
+    navigator.clipboard
+      .writeText(fullUrl)
+      .then(() => {
+        const btn = document.getElementById("btnCopyUrl");
+        const originalText = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      })
+      .catch((err) => {
+        // Fallback for older browsers
+        const textarea = document.createElement("textarea");
+        textarea.value = fullUrl;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand("copy");
+          const btn = document.getElementById("btnCopyUrl");
+          const originalText = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        } catch (e) {
+          alert("Failed to copy URL. Please copy manually:\n" + fullUrl);
+        }
+        document.body.removeChild(textarea);
+      });
+  }
+
+  function loadStateFromUrl() {
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith("#state=")) return;
+
+    try {
+      const base64 = hash.substring(7); // Remove "#state="
+      const json = decodeURIComponent(escape(atob(base64)));
+      const state = JSON.parse(json);
+      deserializeState(state);
+      document.getElementById("fileStatus").innerHTML =
+        `<span class="badge">State loaded from URL</span>`;
+      // Clear hash to avoid reloading on refresh
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    } catch (err) {
+      console.error("Error loading state from URL:", err);
+    }
+  }
+
+  // --- Event wiring ---------------------------------------------------------
+
+  function init() {
+    document
+      .getElementById("fileInput")
+      .addEventListener("change", handleFileChange);
+
+    document.getElementById("gapHours").addEventListener("input", recomputeAll);
+    document
+      .getElementById("prebufferMin")
+      .addEventListener("input", recomputeAll);
+    document.getElementById("roundMin").addEventListener("input", recomputeAll);
+    document
+      .getElementById("hourlyRate")
+      .addEventListener("input", recomputeAll);
+    document
+      .getElementById("currency")
+      .addEventListener("input", recomputeAll);
+    document
+      .getElementById("startDate")
+      .addEventListener("input", recomputeAll);
+
+    document
+      .getElementById("filterInput")
+      .addEventListener("input", () => renderCommits());
+
+    document
+      .getElementById("btnIncludeAll")
+      .addEventListener("click", includeAllCommits);
+    document
+      .getElementById("btnExcludeAll")
+      .addEventListener("click", excludeAllCommits);
+    document
+      .getElementById("btnToggleSelection")
+      .addEventListener("click", invertSelection);
+
+    document
+      .getElementById("btnDownloadState")
+      .addEventListener("click", downloadState);
+    document
+      .getElementById("btnUploadState")
+      .addEventListener("click", uploadState);
+    document
+      .getElementById("stateFileInput")
+      .addEventListener("change", handleStateFileUpload);
+    document
+      .getElementById("btnCopyUrl")
+      .addEventListener("click", copyShareUrl);
+
+    // Try to load state from URL on init
+    loadStateFromUrl();
+
+    renderCommits();
+    recomputeAll();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
