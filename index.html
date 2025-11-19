@@ -391,6 +391,10 @@
       <input id="fileInput" type="file" accept=".txt,.log,.csv,.data,.gitlog" />
       <span id="fileStatus" class="muted">No file loaded.</span>
     </div>
+    <div class="file-row" style="margin-top: 8px;">
+      <input id="logUrlInput" type="text" placeholder="Or enter log file URL..." style="flex: 1; min-width: 200px; background: var(--bg-soft); border-radius: var(--radius-md); border: 1px solid rgba(148, 163, 184, 0.35); padding: 7px 9px; font-size: 0.85rem; color: var(--text); outline: none;" />
+      <button id="btnLoadUrl" class="btn btn-sm">Load from URL</button>
+    </div>
 
     <div class="controls-grid">
       <div class="field">
@@ -596,6 +600,15 @@
     return list;
   }
 
+  function processLogText(text, sourceName) {
+    const statusEl = document.getElementById("fileStatus");
+    commits = parseCommitsFromText(text);
+    statusEl.innerHTML =
+      `<span class="badge">Loaded ${commits.length} unique commits from "${sourceName}"</span>`;
+    renderCommits();
+    recomputeAll();
+  }
+
   function handleFileChange(event) {
     const file = event.target.files[0];
     const statusEl = document.getElementById("fileStatus");
@@ -609,17 +622,44 @@
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target.result;
-      commits = parseCommitsFromText(text);
-      statusEl.innerHTML =
-        `<span class="badge">Loaded ${commits.length} unique commits from "${file.name}"</span>`;
-      renderCommits();
-      recomputeAll();
+      processLogText(e.target.result, file.name);
     };
     reader.onerror = () => {
       statusEl.textContent = "Error reading file.";
     };
     reader.readAsText(file);
+  }
+
+  async function loadLogFromUrl(url) {
+    const statusEl = document.getElementById("fileStatus");
+    statusEl.innerHTML = `<span class="muted">Loading from URL...</span>`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const text = await response.text();
+      const urlName = new URL(url).pathname.split("/").pop() || url;
+      processLogText(text, urlName);
+    } catch (error) {
+      statusEl.innerHTML = `<span style="color: var(--danger);">Error loading from URL: ${error.message}</span>`;
+      console.error("Error loading log from URL:", error);
+    }
+  }
+
+  async function loadLogFromQueryParam() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const logUrl = urlParams.get("log");
+    if (logUrl) {
+      // Decode the URL in case it's encoded
+      const decodedUrl = decodeURIComponent(logUrl);
+      // Set the input field value
+      document.getElementById("logUrlInput").value = decodedUrl;
+      await loadLogFromUrl(decodedUrl);
+    }
+    // Return resolved promise if no log URL to maintain consistent async behavior
+    return Promise.resolve();
   }
 
   // --- Utility helpers ------------------------------------------------------
@@ -943,6 +983,7 @@
 
   function serializeState() {
     const config = getConfig();
+    const logUrl = document.getElementById("logUrlInput").value.trim() || null;
     return {
       version: 1,
       config: {
@@ -952,6 +993,7 @@
         hourlyRate: config.hourlyRate,
         currency: config.currency,
         startDate: document.getElementById("startDate").value || null,
+        logUrl: logUrl,
       },
       commits: commits.map((c) => ({
         hash: c.hash,
@@ -987,6 +1029,11 @@
       document.getElementById("startDate").value = state.config.startDate;
     } else {
       document.getElementById("startDate").value = "";
+    }
+    if (state.config.logUrl !== undefined && state.config.logUrl !== null) {
+      document.getElementById("logUrlInput").value = state.config.logUrl;
+    } else {
+      document.getElementById("logUrlInput").value = "";
     }
 
     // Restore commits
@@ -1074,6 +1121,14 @@
     // Compress to base64 for URL
     const base64 = btoa(unescape(encodeURIComponent(json)));
     const url = new URL(window.location.href);
+    
+    // Add log URL to query parameter if present
+    if (state.config.logUrl) {
+      url.searchParams.set("log", state.config.logUrl);
+    } else {
+      url.searchParams.delete("log");
+    }
+    
     url.hash = "#state=" + base64;
     const fullUrl = url.toString();
 
@@ -1110,7 +1165,7 @@
       });
   }
 
-  function loadStateFromUrl() {
+  async function loadStateFromUrl() {
     const hash = window.location.hash;
     if (!hash || !hash.startsWith("#state=")) return;
 
@@ -1118,6 +1173,12 @@
       const base64 = hash.substring(7); // Remove "#state="
       const json = decodeURIComponent(escape(atob(base64)));
       const state = JSON.parse(json);
+      
+      // Load log URL first if present in state
+      if (state.config && state.config.logUrl) {
+        await loadLogFromUrl(state.config.logUrl);
+      }
+      
       deserializeState(state);
       document.getElementById("fileStatus").innerHTML =
         `<span class="badge">State loaded from URL</span>`;
@@ -1134,6 +1195,25 @@
     document
       .getElementById("fileInput")
       .addEventListener("change", handleFileChange);
+    document
+      .getElementById("btnLoadUrl")
+      .addEventListener("click", () => {
+        const url = document.getElementById("logUrlInput").value.trim();
+        if (url) {
+          loadLogFromUrl(url);
+        }
+      });
+    // Allow Enter key to trigger load
+    document
+      .getElementById("logUrlInput")
+      .addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          const url = document.getElementById("logUrlInput").value.trim();
+          if (url) {
+            loadLogFromUrl(url);
+          }
+        }
+      });
 
     document.getElementById("gapHours").addEventListener("input", recomputeAll);
     document
@@ -1177,8 +1257,11 @@
       .getElementById("btnCopyUrl")
       .addEventListener("click", copyShareUrl);
 
-    // Try to load state from URL on init
-    loadStateFromUrl();
+    // Try to load log file from query parameter first
+    loadLogFromQueryParam().then(() => {
+      // Then try to load state from URL hash (after log is loaded or if no log URL)
+      loadStateFromUrl();
+    });
 
     renderCommits();
     recomputeAll();
