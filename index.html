@@ -627,15 +627,12 @@
           second: "2-digit",
         });
 
-        // Detect merge commits (typically start with "Merge" or contain "Merge branch")
-        const isMergeCommit = /^Merge\s/i.test(meta) || /\bMerge\s+(branch|pull|remote)/i.test(meta);
-        
         map.set(hash, {
           hash,
           ts,
           meta,
           dateStr,
-          included: !isMergeCommit, // Exclude merge commits by default
+          included: True,
         });
       }
     }
