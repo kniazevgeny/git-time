@@ -190,6 +190,13 @@
       padding: 2px 4px;
       transition: border-color 0.15s;
       font-family: inherit;
+      resize: none;
+      overflow: hidden;
+      line-height: 1.45;
+      min-height: 1.45em;
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .desc-input:focus { border-bottom-color: var(--accent); }
     .desc-input::placeholder { color: var(--muted); opacity: 0.5; }
@@ -791,12 +798,14 @@
 
       const tdDesc = document.createElement('td');
       tdDesc.className = 'col-desc';
-      const descInp = document.createElement('input');
-      descInp.type = 'text';
+      const descInp = document.createElement('textarea');
       descInp.className = 'desc-input';
+      descInp.rows = 1;
       descInp.value = dayDescriptions[day.dateKey] || '';
       descInp.placeholder = 'Что делали…';
-      descInp.addEventListener('input', () => { dayDescriptions[day.dateKey] = descInp.value; });
+      const autoResize = () => { descInp.style.height = 'auto'; descInp.style.height = descInp.scrollHeight + 'px'; };
+      descInp.addEventListener('input', () => { dayDescriptions[day.dateKey] = descInp.value; autoResize(); });
+      requestAnimationFrame(autoResize);
       tdDesc.appendChild(descInp);
 
       tr.append(tdNum, tdDate, tdCount, tdBilled, tdPrice, tdDesc);
@@ -844,6 +853,10 @@
       }
       statusEl.innerHTML = `<span class="badge">${count} descriptions imported</span>`;
       renderDayBreakdown(buildDayBreakdown(getConfig()), getConfig());
+      // trigger auto-resize on all textareas after re-render
+      requestAnimationFrame(() => {
+        document.querySelectorAll('#dayTable .desc-input').forEach(ta => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; });
+      });
     } catch (e) {
       statusEl.innerHTML = `<span style="color:var(--danger);">Invalid JSON: ${e.message}</span>`;
     }
